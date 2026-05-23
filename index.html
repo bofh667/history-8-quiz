@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>История — онлайн-тесты</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div>
+        <p class="eyebrow">История · темы 24–31</p>
+        <h1 id="topicTitle">Английские колонии в Северной Америке</h1>
+        <p id="topicSubtitle" class="subtitle">Предпосылки борьбы колоний за независимость</p>
+      </div>
+      <div class="header-controls">
+        <label class="small" for="topicSelect">Тема</label>
+        <select id="topicSelect" class="topic-select"></select>
+        <button id="restartTop" class="ghost">Начать заново</button>
+      </div>
+    </header>
+
+    <section class="status-bar">
+      <div>Вопрос <span id="currentQuestion">1</span> / <span id="totalQuestions">0</span></div>
+      <div>Текущий счёт: <span id="liveScore">0</span></div>
+      <div>Отвечено: <span id="answeredCount">0</span></div>
+    </section>
+
+    <main id="quiz"></main>
+
+    <section class="nav-panel">
+      <div id="questionDots" class="dots"></div>
+      <div class="actions">
+        <button id="prevBtn" class="ghost">← Назад</button>
+        <button id="nextBtn">Далее →</button>
+        <button id="finishBtn" class="accent">Завершить тест</button>
+      </div>
+    </section>
+  </div>
+
+  <template id="resultTemplate">
+    <section class="result-card">
+      <h2>Готово</h2>
+      <p class="result-score">Ваш результат: <strong id="finalScore"></strong></p>
+      <p id="resultText"></p>
+      <div id="review"></div>
+      <button id="restartBottom" class="accent">Пройти заново</button>
+    </section>
+  </template>
+
+  <script src="data/topics.js"></script>
+  <script src="data/topic24.js"></script>
+  <script src="data/topic25.js"></script>
+  <script src="data/topic26.js"></script>
+  <script src="data/topic27.js"></script>
+  <script src="data/topic28.js"></script>
+  <script src="data/topic29.js"></script>
+  <script src="data/topic30.js"></script>
+  <script src="data/topic31.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
