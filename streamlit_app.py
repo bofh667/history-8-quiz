@@ -24,6 +24,71 @@ TOPIC_INDEX = {topic['id']: topic for topic in TOPICS}
 
 st.set_page_config(page_title='История — онлайн-тесты', page_icon='📚', layout='wide')
 
+st.markdown(
+    """
+    <style>
+      .stApp {
+        background: linear-gradient(180deg, #020617 0%, #0f172a 38%);
+      }
+      .block-container {
+        max-width: 920px;
+        padding-top: 1.2rem;
+        padding-bottom: 2rem;
+      }
+      h1, h2, h3, p, label {
+        word-break: break-word;
+      }
+      [data-testid="stMetric"] {
+        background: rgba(17, 24, 39, 0.92);
+        border: 1px solid #1f2937;
+        border-radius: 16px;
+        padding: 0.8rem 0.9rem;
+      }
+      [data-testid="stButton"] > button,
+      [data-testid="stDownloadButton"] > button {
+        border-radius: 12px;
+        min-height: 2.8rem;
+        white-space: normal;
+      }
+      [data-testid="stRadio"] label,
+      [data-testid="stMultiSelect"] label,
+      [data-testid="stTextInput"] label,
+      [data-testid="stSelectbox"] label {
+        font-weight: 600;
+      }
+      [data-testid="stRadio"] [role="radiogroup"] > label,
+      [data-testid="stCheckbox"] label {
+        padding: 0.35rem 0;
+      }
+      .quiz-card {
+        background: rgba(17, 24, 39, 0.92);
+        border: 1px solid #1f2937;
+        border-radius: 18px;
+        padding: 1rem 1rem 0.5rem;
+        margin: 0.75rem 0 1rem;
+      }
+      .quiz-muted {
+        color: #94a3b8;
+        font-size: 0.95rem;
+      }
+      @media (max-width: 640px) {
+        .block-container {
+          padding-left: 0.85rem;
+          padding-right: 0.85rem;
+          padding-top: 0.75rem;
+        }
+        h1 { font-size: 1.65rem; }
+        h2 { font-size: 1.25rem; }
+        .quiz-card {
+          padding: 0.85rem 0.8rem 0.35rem;
+          border-radius: 16px;
+        }
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 def normalize_text(value: str) -> str:
     return ' '.join(str(value).strip().lower().replace('ё', 'е').split())
@@ -126,7 +191,7 @@ questions = quiz_data['questions']
 current_index = state['current']
 question = questions[current_index]
 
-col_title, col_action = st.columns([5, 1])
+col_title, col_action = st.columns([4, 1])
 with col_title:
     st.subheader(quiz_data['topic'])
     st.caption(quiz_data.get('subtitle', ''))
@@ -143,16 +208,27 @@ stat2.metric('Текущий счёт', score)
 stat3.metric('Отвечено', answered_count)
 
 if not state['finished']:
-    top1, top2 = st.columns([3, 1])
-    with top1:
-        st.markdown(f'**{question["prompt"]}**')
-        if question.get('help'):
-            st.caption(question['help'])
-    with top2:
-        label = 'Скрыть тему' if state['show_source'] else 'Показать тему'
-        if st.button(label, use_container_width=True):
-            state['show_source'] = not state['show_source']
-            st.rerun()
+    jump_options = list(range(len(questions)))
+    jump_value = st.selectbox(
+        'Навигация по вопросам',
+        options=jump_options,
+        index=current_index,
+        format_func=lambda idx: f'Вопрос {idx + 1} — {questions[idx]["prompt"]}',
+        key=f'jump_select_{selected_topic}',
+    )
+    if jump_value != current_index:
+        jump_to_question(selected_topic, jump_value)
+        st.rerun()
+
+    st.markdown('<div class="quiz-card">', unsafe_allow_html=True)
+    st.markdown(f'**{question["prompt"]}**')
+    if question.get('help'):
+        st.caption(question['help'])
+
+    label = 'Скрыть тему' if state['show_source'] else 'Показать тему'
+    if st.button(label, use_container_width=True):
+        state['show_source'] = not state['show_source']
+        st.rerun()
 
     if state['show_source']:
         with st.expander('Полный текст темы', expanded=True):
@@ -183,14 +259,14 @@ if not state['finished']:
         )
         selected_indices = [question['options'].index(option) for option in selected_labels]
         state['answers'][current_index] = selected_indices
-        if st.button('Проверить ответ', key=f'check_{selected_topic}_{current_index}'):
+        if st.button('Проверить ответ', key=f'check_{selected_topic}_{current_index}', use_container_width=True):
             state['checked'][current_index] = True
 
     elif question['type'] == 'text':
         previous_answer = state['answers'][current_index] or ''
         text_value = st.text_input('Введи ответ', value=previous_answer, key=answer_key)
         state['answers'][current_index] = text_value
-        if st.button('Проверить ответ', key=f'check_{selected_topic}_{current_index}'):
+        if st.button('Проверить ответ', key=f'check_{selected_topic}_{current_index}', use_container_width=True):
             state['checked'][current_index] = True
 
     current_answer = state['answers'][current_index]
@@ -200,17 +276,8 @@ if not state['finished']:
         else:
             st.error(f'Пока неверно. {question["explanation"]}')
 
-    st.caption('Можно переключаться между вопросами в любом порядке.')
-
-    dot_columns = st.columns(min(len(questions), 6))
-    for idx in range(len(questions)):
-        column = dot_columns[idx % len(dot_columns)]
-        marker = '●' if idx == current_index else '○'
-        suffix = ' ✓' if is_answered(state['answers'][idx]) else ''
-        with column:
-            if st.button(f'{marker} {idx + 1}{suffix}', key=f'jump_{selected_topic}_{idx}', use_container_width=True):
-                jump_to_question(selected_topic, idx)
-                st.rerun()
+    st.markdown('<p class="quiz-muted">Можно переключаться между вопросами в любом порядке.</p>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     nav1, nav2, nav3 = st.columns(3)
     with nav1:
@@ -238,7 +305,7 @@ else:
     else:
         st.write('Неплохо, но тему стоит ещё раз прогнать.')
 
-    if st.button('Пройти заново', type='primary'):
+    if st.button('Пройти заново', type='primary', use_container_width=True):
         restart_quiz(selected_topic)
         st.rerun()
 
